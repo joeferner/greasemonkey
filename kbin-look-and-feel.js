@@ -9,36 +9,10 @@
 // @grant        GM_addStyle
 // ==/UserScript==
 
-function getCommentLevelOfElement(elem) {
-  return Number(elem.getAttribute("class").match(/comment-level--(\d+)/)[1]);
-}
-
-function findParentComment(elem) {
-    const elemLevel = getCommentLevelOfElement(elem);
-    let sib = elem;
-    while (true) {
-      sib = sib.previousSibling;
-      if (!sib) {
-        return undefined;
-      }
-      console.log(sib.tagName);
-      if (sib.tagName !== 'DIV') {
-        continue;
-      }
-      const sibLevel = getCommentLevelOfElement(sib);
-      if (sibLevel < elemLevel) {
-        return sib;
-      }
-    }
-    return undefined;
-}
-
-(function() {
-  'use strict';
-
-   let commentsCss = '';
-   for(let level = 2, i = 1; level < 10; level++, i++) {
-       commentsCss += `
+function updateCss() {
+  let commentsCss = '';
+  for (let level = 2, i = 1; level < 10; level++, i++) {
+    commentsCss += `
          .comments-tree .comment-line--${level} {
            left: ${i * 2}rem !important;
          }
@@ -47,7 +21,19 @@ function findParentComment(elem) {
            padding-left: ${i * 2}rem !important;
          }
       `;
-   }
+  }
+
+  for (let level = 1; level < 10; level++) {
+    commentsCss += `
+         .comments-tree .comment-line--${level} {
+           cursor: pointer;
+         }
+
+         .comments-tree .comment-line--${level}:hover {
+           border-width: 3px;
+         }
+       `;
+  }
 
   GM_addStyle(`
     article.entry, article.entry.no-image {
@@ -59,6 +45,17 @@ function findParentComment(elem) {
 
     article.entry figure {
       margin: 0 5px 0 0;
+    }
+
+    article.entry.no-image figure {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    article.entry.no-image figure i {
+      font-size: 53px;
+      color: #bbb;
     }
 
     article.entry figure img {
@@ -163,31 +160,123 @@ function findParentComment(elem) {
       border: 0 !important;
     }
 
+    .comments-tree .comment-level--1 {
+      border-left: 1px solid #b9ab52;
+    }
+
+    .comments-tree .comment-line--1 {
+      border-left: 1px dashed #b9ab52;
+      bottom: 0;
+      height: 100%;
+      left: 0;
+      opacity: .4;
+      position: absolute;
+      z-index: 1;
+    }
+
     ${commentsCss}
   `);
+}
 
+function updatePosts() {
+  // add title/tooltip to links, css is limiting there width
   for (let a of document.querySelectorAll('article.entry header h2 > a')) {
     a.title = a.innerText;
   }
 
+  // add dummy images to no-image posts
+  for (let figure of document.querySelectorAll('article.entry.no-image figure')) {
+    if (figure.innerHTML.trim().length === 0) {
+      figure.innerHTML = '<i class="fa-regular fa-newspaper" aria-label="Article"></i>';
+    }
+  }
+}
+
+function updatePagination() {
+  // change next/previous page links to more text to provide larger click area
   for (let a of document.querySelectorAll('.pagination__item--next-page')) {
     a.innerText = 'next ›';
   }
   for (let a of document.querySelectorAll('.pagination__item--previous-page')) {
     a.innerText = '‹ prev';
   }
+}
 
+function updateComments() {
+  function getCommentLevelOfElement(elem) {
+    return Number(elem.getAttribute("class").match(/comment-level--(\d+)/)[1]);
+  }
+
+  // add level 1 line
+  for (let section of document.querySelectorAll('section.comments')) {
+    const level1Line = document.createElement('div');
+    level1Line.setAttribute("class", "comment-line--1");
+    section.appendChild(level1Line);
+  }
+
+  const commentTree = { children: [] };
+  function findTreeItem(elem, parent) {
+    parent = parent || commentTree;
+    for (let child of parent.children) {
+      if (child.div === elem) {
+        return child;
+      }
+      const found = findTreeItem(elem, child);
+      if (found) {
+        return found;
+      }
+    }
+    return undefined;
+  }
+
+  // add collapsible comments
+  const stack = [commentTree];
+  let lastLevel = 1;
   for (let comment of document.querySelectorAll('.comment')) {
+    // wrap comments in div to allow clicking in margin
     const div = document.createElement('div');
     const level = getCommentLevelOfElement(comment);
     div.setAttribute("class", `comment-level--${level} comment-margin`);
     comment.replaceWith(div);
     div.appendChild(comment);
-    div.addEventListener('click', (event) => {
-      if (event.target === div) {
-        const parentComment = findParentComment(div);
-        console.log(parentComment);
-      }
-    });
+
+    if (level > lastLevel) {
+      const children = stack[stack.length - 1].children;
+      stack.push(children[children.length - 1]);
+    } else if (level < lastLevel) {
+      stack.length = level;
+    }
+
+    const item = {
+      parent: stack[stack.length - 1],
+      div,
+      children: []
+    };
+    stack[stack.length - 1].children.push(item);
+
+    lastLevel = level;
   }
+
+  for (let level = 1; level < 10; level++) {
+    for (let commentLine of document.querySelectorAll(`.comment-line--${level}`)) {
+      commentLine.addEventListener('click', (event) => {
+        const marginElem = document.elementsFromPoint(event.x, event.y).filter(elem => (elem.getAttribute('class') || '').includes('comment-margin'))[0];
+        if (marginElem) {
+          const treeItem = findTreeItem(marginElem);
+          console.log(event, treeItem);
+        }
+      });
+    }
+  }
+
+  console.log(commentTree);
+}
+
+(function () {
+  'use strict';
+
+  updateCss();
+  updatePosts();
+  updatePagination();
+  updateComments();
 })();
