@@ -27,6 +27,7 @@ function updateCss() {
     commentsCss += `
          .comments-tree .comment-line--${level} {
            cursor: pointer;
+           width: 5px;
          }
 
          .comments-tree .comment-line--${level}:hover {
@@ -248,6 +249,7 @@ function updateComments() {
     }
 
     const item = {
+      level,
       parent: stack[stack.length - 1],
       div,
       children: []
