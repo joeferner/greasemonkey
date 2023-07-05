@@ -9,6 +9,18 @@
 // @grant        GM_addStyle
 // ==/UserScript==
 
+const COMMENT_LEVEL_COLORS = [
+  '#b9ab52',
+  '#71ac53',
+  'orange',
+  '#538eac',
+  '#6253ac',
+  '#ac53ac',
+  '#ac5353',
+  '#2b7070',
+  '#b9ab52'
+];
+
 function updateCss() {
   let commentsCss = '';
   for (let level = 2, i = 1; level < 10; level++, i++) {
@@ -19,6 +31,8 @@ function updateCss() {
          .comments-tree div.comment-level--${level} {
            margin: 0 !important;
            padding-left: ${i * 2}rem !important;
+           display: flex;
+           flex-direction: row;
          }
       `;
   }
@@ -134,8 +148,8 @@ function updateCss() {
     }
 
     .comment {
-      grid-template-areas: "vote avatar header header" "vote avatar body body" "vote avatar meta meta" "vote avatar footer footer";
-      grid-template-columns: min-content min-content auto;
+      grid-template-areas: "toggle vote avatar header header" "toggle vote avatar body body" "toggle vote avatar meta meta" "toggle vote avatar footer footer";
+      grid-template-columns: min-content min-content min-content auto;
       grid-gap: 3px;
     }
 
@@ -153,6 +167,10 @@ function updateCss() {
       padding-bottom: 0 !important;
     }
 
+    .comment .toggle {
+      grid-area: toggle;
+    }
+
     section.comments.comments-tree blockquote {
       margin-left: 0 !important;
     }
@@ -163,6 +181,8 @@ function updateCss() {
 
     .comments-tree .comment-level--1 {
       border-left: 1px solid #b9ab52;
+      display: flex;
+      flex-direction: row;
     }
 
     .comments-tree .comment-line--1 {
@@ -173,6 +193,19 @@ function updateCss() {
       opacity: .4;
       position: absolute;
       z-index: 1;
+    }
+
+    .comments-tree .toggle {
+      border: none;
+      width: 23px;
+      z-index: 2;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+    }
+
+    .comments-tree .toggle i {
+      margin-top: 5px;
     }
 
     ${commentsCss}
@@ -193,7 +226,7 @@ function updatePosts() {
       if (existingIcon) {
         clazz = existingIcon.getAttribute('class');
       }
-      figure.innerHTML = `<i class="${clazz}" aria-label="Article"></i>`;
+      figure.innerHTML = `<i class="${clazz}"></i>`;
     }
   }
 }
@@ -221,6 +254,7 @@ function updateComments() {
   }
 
   const commentTree = { children: [] };
+
   function findTreeItem(elem, parent) {
     parent = parent || commentTree;
     for (let child of parent.children) {
@@ -233,6 +267,40 @@ function updateComments() {
       }
     }
     return undefined;
+  }
+
+  function findParentTreeItem(treeItem, parentLevel) {
+    if (!treeItem) {
+      return undefined;
+    }
+    if (treeItem.level === parentLevel) {
+      return treeItem;
+    }
+    return findParentTreeItem(treeItem.parent, parentLevel);
+  }
+
+  function toggleTreeItem(treeItem, collapse) {
+    collapse = collapse ?? !treeItem.collapsed;
+    treeItem.collapsed = collapse;
+    if (treeItem.div) {
+      for (let toggleButtonIcon of treeItem.div.querySelectorAll('button.toggle i')) {
+        toggleButtonIcon.setAttribute('class', collapse ? 'fa-solid fa-chevron-right' : 'fa-solid fa-chevron-down');
+      }
+    }
+
+    function applyToChildren(treeItem, collapse) {
+      for (let child of treeItem.children) {
+        if (collapse) {
+          child.div.style.display = 'none';
+        } else {
+          child.div.style.display = null;
+        }
+        if (child.collapsed === false) {
+          applyToChildren(child, collapse);
+        }
+      }
+    }
+    applyToChildren(treeItem, collapse);
   }
 
   // add collapsible comments
@@ -256,13 +324,33 @@ function updateComments() {
     const item = {
       level,
       parent: stack[stack.length - 1],
+      commentElem: comment,
       div,
+      collapsed: false,
       children: []
     };
     stack[stack.length - 1].children.push(item);
-
     lastLevel = level;
   }
+
+  function addToggleButtons(item) {
+    if (item.children.length > 0) {
+      if (item.div) {
+        const toggleButton = document.createElement('button');
+        toggleButton.setAttribute('class', 'toggle toggle-collapse');
+        toggleButton.innerHTML = '<i class="fa-solid fa-chevron-down"></i>';
+        toggleButton.style.backgroundColor = COMMENT_LEVEL_COLORS[item.level - 1];
+        toggleButton.addEventListener('click', () => {
+          toggleTreeItem(item);
+        });
+        item.div.insertBefore(toggleButton, item.div.firstChild);
+      }
+      for (const child of item.children) {
+        addToggleButtons(child);
+      }
+    }
+  }
+  addToggleButtons(commentTree);
 
   for (let level = 1; level < 10; level++) {
     for (let commentLine of document.querySelectorAll(`.comment-line--${level}`)) {
@@ -270,13 +358,16 @@ function updateComments() {
         const marginElem = document.elementsFromPoint(event.x, event.y).filter(elem => (elem.getAttribute('class') || '').includes('comment-margin'))[0];
         if (marginElem) {
           const treeItem = findTreeItem(marginElem);
-          console.log(event, treeItem);
+          if (treeItem) {
+            const parentTreeItem = findParentTreeItem(treeItem, level);
+            if (parentTreeItem) {
+              toggleTreeItem(parentTreeItem, true);
+            }
+          }
         }
       });
     }
   }
-
-  console.log(commentTree);
 }
 
 (function () {
