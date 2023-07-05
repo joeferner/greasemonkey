@@ -148,8 +148,8 @@ function updateCss() {
     }
 
     .comment {
-      grid-template-areas: "toggle vote avatar header header" "toggle vote avatar body body" "toggle vote avatar meta meta" "toggle vote avatar footer footer";
-      grid-template-columns: min-content min-content min-content auto;
+      grid-template-areas: "vote avatar header" "vote avatar body" "vote avatar meta" "vote avatar footer";
+      grid-template-columns: min-content min-content auto;
       grid-gap: 3px;
     }
 
@@ -167,10 +167,6 @@ function updateCss() {
       padding-bottom: 0 !important;
     }
 
-    .comment .toggle {
-      grid-area: toggle;
-    }
-
     section.comments.comments-tree blockquote {
       margin-left: 0 !important;
     }
@@ -179,10 +175,13 @@ function updateCss() {
       border: 0 !important;
     }
 
-    .comments-tree .comment-level--1 {
-      border-left: 1px solid #b9ab52;
+    .comments-tree div.comment-level--1 {
       display: flex;
       flex-direction: row;
+    }
+
+    .comments-tree .comment-level--1 {
+      border-left: 1px solid #b9ab52;
     }
 
     .comments-tree .comment-line--1 {
