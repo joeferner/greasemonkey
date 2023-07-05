@@ -37,52 +37,52 @@ function updateCss() {
   }
 
   GM_addStyle(`
-    article.entry, article.entry.no-image {
+    #content article.entry, #content article.entry.no-image {
       padding: 5px;
       margin: 0;
       grid-template-areas: "vote image title " "vote image meta " "vote image footer " "vote image body" !important;
       grid-template-columns: min-content 75px auto;
     }
 
-    article.entry figure {
+    #content article.entry figure {
       margin: 0 5px 0 0;
     }
 
-    article.entry.no-image figure {
+    #content article.entry.no-image figure {
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    article.entry.no-image figure i {
+    #content article.entry.no-image figure i {
       font-size: 53px;
       color: #bbb;
     }
 
-    article.entry figure img {
+    #content article.entry figure img {
       max-width: 70px;
       max-height: 52px;
     }
 
-    article.entry .content {
+    #content article.entry .content {
       display: none;
     }
 
-    article.entry header {
+    #content article.entry header {
       margin-bottom: 0;
     }
 
-    article.entry header h2 {
+    #content article.entry header h2 {
       display: flex;
       align-items: center;
     }
 
-    article.entry .meta {
+    #content article.entry .meta {
       color: #888;
       font-size: 10px;
     }
 
-    article.entry header h2 > a {
+    #content article.entry header h2 > a {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
