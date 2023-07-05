@@ -188,7 +188,12 @@ function updatePosts() {
   // add dummy images to no-image posts
   for (let figure of document.querySelectorAll('article.entry.no-image figure')) {
     if (figure.innerHTML.trim().length === 0) {
-      figure.innerHTML = '<i class="fa-regular fa-newspaper" aria-label="Article"></i>';
+      let clazz = 'fa-regular fa-newspaper';
+      const existingIcon = figure.parentElement.querySelectorAll('footer menu li i')[0];
+      if (existingIcon) {
+        clazz = existingIcon.getAttribute('class');
+      }
+      figure.innerHTML = `<i class="${clazz}" aria-label="Article"></i>`;
     }
   }
 }
