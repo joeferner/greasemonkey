@@ -151,6 +151,7 @@ function updateCss() {
       grid-template-areas: "vote avatar header" "vote avatar body" "vote avatar meta" "vote avatar footer";
       grid-template-columns: min-content min-content auto;
       grid-gap: 3px;
+      flex-grow: 1;
     }
 
     .comment .vote {
