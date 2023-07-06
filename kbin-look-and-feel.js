@@ -205,6 +205,7 @@ function updateCss() {
     .comments-tree .toggle {
       border: none;
       width: 23px;
+      min-width: 23px;
       z-index: 2;
       cursor: pointer;
       display: flex;
