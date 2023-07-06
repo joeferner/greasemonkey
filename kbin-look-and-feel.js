@@ -68,14 +68,21 @@ function updateCss() {
       justify-content: center;
     }
 
-    #content article.entry.no-image figure i {
+    #content article.entry figure i {
       font-size: 53px;
       color: #bbb;
     }
 
+    #content article.entry figure {
+      width: 70px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     #content article.entry figure img {
-      max-width: 70px;
-      max-height: 52px;
+      left: 0;
     }
 
     #content article.entry .content {
@@ -212,22 +219,30 @@ function updateCss() {
   `);
 }
 
-function updatePosts() {
+function updatePost(entry) {
   // add title/tooltip to links, css is limiting there width
-  for (let a of document.querySelectorAll('article.entry header h2 > a')) {
+  for (let a of entry.querySelectorAll('header h2 > a')) {
     a.title = a.innerText;
   }
 
   // add dummy images to no-image posts
-  for (let figure of document.querySelectorAll('article.entry.no-image figure')) {
-    if (figure.innerHTML.trim().length === 0) {
-      let clazz = 'fa-regular fa-newspaper';
-      const existingIcon = figure.parentElement.querySelectorAll('footer menu li i')[0];
-      if (existingIcon) {
-        clazz = existingIcon.getAttribute('class');
-      }
-      figure.innerHTML = `<i class="${clazz}"></i>`;
+  const figures = [...entry.querySelectorAll('figure')];
+  if (figures.length === 0) {
+    const figure = document.createElement('figure');
+    let clazz = 'fa-regular fa-newspaper';
+    const existingIcon = entry.querySelectorAll('footer menu li i')[0];
+    if (existingIcon) {
+      clazz = existingIcon.getAttribute('class');
     }
+    figure.innerHTML = `<i class="${clazz}"></i>`;
+
+    entry.appendChild(figure);
+  }
+}
+
+function updatePosts() {
+  for (let entry of document.querySelectorAll('article.entry')) {
+    updatePost(entry);
   }
 }
 
