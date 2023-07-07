@@ -75,6 +75,7 @@ function updateCss() {
 
     #content article.entry figure {
       width: 70px;
+      height: 70px;
       margin: 0;
       display: flex;
       align-items: center;
