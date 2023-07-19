@@ -104,6 +104,10 @@ function updateCss() {
       font-size: 10px;
     }
 
+    .no-image-placeholder {
+      display: none;
+    }
+
     #content article.entry header h2 > a {
       white-space: nowrap;
       overflow: hidden;
